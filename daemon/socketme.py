@@ -73,7 +73,7 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
     def handle(self):
         # self.request is the TCP socket connected to the client
         self.data = self.request.recv(1024).strip()
-        print "%s wrote:" % (self.client_address[0])
+#        print "%s wrote:" % (self.client_address[0])
         #print self.data
 
         self.parse_request(self.data)
@@ -87,7 +87,10 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
             pass
 
         # just send back the same data, but upper-cased
-        self.request.sendall(self.data.upper())
+#        self.request.sendall(self.data)
+        self.request.send('')
+        self.request.close()
+        print "Disconnected"
 
     def parse_request(self, req):
         headers = {}
