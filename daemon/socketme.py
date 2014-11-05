@@ -53,22 +53,20 @@ class KarotzDomParser:
         except UnicodeEncodeError:
             pass
 
-        # Reencode to UTF-8
-        text.encode('UTF-8')
+        # Reencode to UTF-8 and format a real XML
         text = '<?xml version="1.0" encoding="UTF-8"?>' + "\n" + text
+        text = text.encode('utf-8')
 
-        fName = "/tmp/sampletts.xml"
-        a = codecs.open(fName, "w", encoding='utf8')
-        a.write(text)
-        a.close()
+#        fName = "/tmp/sampletts.xml"
+#        a = codecs.open(fName, "w", encoding='utf8')
+#        a.write(text)
+#        a.close()
 
-#        doc = minidom.parseString(text)
-        doc = minidom.parse(fName)
-#        try: 
-#            doc = minidom.parseString(text)
-#        except UnicodeEncodeError:
-#            print "ERROR: Text not clear, skipping"
-#            return 
+        try: 
+            doc = minidom.parseString(text)
+        except UnicodeEncodeError:
+            print "ERROR: Text not clear, skipping"
+            return 
 
         if doc.hasChildNodes():
             root = doc.documentElement
