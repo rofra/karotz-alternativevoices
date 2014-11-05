@@ -1,10 +1,14 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import SocketServer
 import pprint
 import xml
 import time
 import os
 import urllib
+import sys
+import re, getopt
+import codecs
 
 #from urlparse import urlparse, parse_qs
 from BaseHTTPServer import BaseHTTPRequestHandler
@@ -28,10 +32,44 @@ AcapelaTTS %s\n\
 
 
 
+def rencodeur( txt ):
+    return txt
+    try:                                                               
+        txt = txt.decode('utf-8', 'ignore')
+        txt = txt.strip()
+    except UnicodeDecodeError:                                
+        pass  
+    return txt
 
 class KarotzDomParser:
     def parsePostRequest(self, text):
-        doc = minidom.parseString(text)
+        try:
+            text = text.decode('latin1')
+        except UnicodeEncodeError:
+            pass
+ 
+        try:
+            text = text.decode("cp1252")
+        except UnicodeEncodeError:
+            pass
+
+        # Reencode to UTF-8
+        text.encode('UTF-8')
+        text = '<?xml version="1.0" encoding="UTF-8"?>' + "\n" + text
+
+        fName = "/tmp/sampletts.xml"
+        a = codecs.open(fName, "w", encoding='utf8')
+        a.write(text)
+        a.close()
+
+#        doc = minidom.parseString(text)
+        doc = minidom.parse(fName)
+#        try: 
+#            doc = minidom.parseString(text)
+#        except UnicodeEncodeError:
+#            print "ERROR: Text not clear, skipping"
+#            return 
+
         if doc.hasChildNodes():
             root = doc.documentElement
             current = root.firstChild
@@ -44,6 +82,8 @@ class KarotzDomParser:
     def parseDomElement(self, t):
         if (t.nodeType == t.TEXT_NODE):
             txtToRead = t.nodeValue
+
+            txtToRead = txtToRead.encode("UTF-8", "replace")
             print "READ|" + txtToRead
             pl = KarotzPlayer()
             pl.play(txtToRead)
@@ -51,12 +91,20 @@ class KarotzDomParser:
             tname = t.tagName
             if (tname == "break"): 
                 timeAtt = t.attributes["time"]
-                delay = timeAtt.value
+                timeString = timeAtt.value
+
                 # reformat delay
-                delay = delay.replace('ms','')
+                match = re.match(r'^(\d+)ms$', timeString)
+                if match:
+                    delay = timeString.replace('ms','')
+
+                match = re.match(r'^(\d+)s$', timeString)
+                if match:                     
+                    delay = timeString.replace('s','')
+                    delay = float(delay) * 1000
                 
                 print "WAIT|" + delay
-                #time.sleep (float(delay) / 1000.0);
+                time.sleep (float(delay) / 1000.0);
             else: 
                 print "UNKNOWN|" + tname
 
@@ -74,21 +122,26 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
         # self.request is the TCP socket connected to the client
         self.data = self.request.recv(1024).strip()
 #        print "%s wrote:" % (self.client_address[0])
-        #print self.data
+#        print self.data
 
         self.parse_request(self.data)
 #        print self.body
         
         # Create the DOM Parser instance and launch the action
         parser = KarotzDomParser()
-        try:
-            parser.parsePostRequest(self.body)
-        except UnicodeEncodeError:
-            pass
+        s = self.body;
+        s = s.decode('utf-8', 'ignore')
+#        print s
+        chain = rencodeur(s.strip())
+
+        parser.parsePostRequest(chain)
+#        try:
+#            parser.parsePostRequest(chain)
+#        except UnicodeEncodeError:
+#            pass
 
         # just send back the same data, but upper-cased
 #        self.request.sendall(self.data)
-        self.request.send('')
         self.request.close()
         print "Disconnected"
 
@@ -112,19 +165,41 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
         self.body = body
 
 class KarotzPlayer:
-   def play(self, text):
-       parameters = { 'engine': '1', 'text': text, 'voice': 'alice', 'nocache' : '1', 'mute': '1' }
+    def play(self, text):
+       global inputvoice
+       #print "PLAY WITH " + inputvoice
+
+       parameters = { 'engine': '0', 'text': text, 'voice': inputvoice, 'nocache' : '1', 'mute': '0' }
        parametersEncoded = urllib.urlencode(parameters)
        urlfull = 'http://127.0.0.1/cgi-bin/tts?%s' % parametersEncoded
        print "PLAYING " + urlfull
        f = urllib.urlopen(urlfull)
 
 
-if __name__ == "__main__":
-    HOST, PORT = "", 10003
-    
-    print "Creating Socket"
+def main(argv):
+    global inputvoice
+    inputport = ''
+    inputvoice = ''
+    try:
+        opts, args = getopt.getopt(argv,"hp:g:",["port=","voice="])
+    except getopt.GetoptError:
+        print 'socketme.py -p <port> -g <voicename>'
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt == '-h':
+           print 'socketme.py -p <port> -g <voicename>'
+           sys.exit()
+        elif opt in ("-p", "--port"):
+           inputport = arg
+        elif opt in ("-g", "--voice"):
+           inputvoice = arg
 
+    print "%s / %s" % (inputport, inputvoice)
+
+
+    # Prepare the socket
+    HOST, PORT = "",int(inputport)
+    
     # Create the server, binding to localhost on port 9999
     SocketServer.TCPServer.allow_reuse_address = True
     server = SocketServer.TCPServer((HOST, PORT), MyTCPHandler)
@@ -136,4 +211,10 @@ if __name__ == "__main__":
         server.serve_forever()
     except KeyboardInterrupt:
         server.shutdown()
+
+# MAIN CALL
+if __name__ == "__main__":                                            
+   global inputvoice
+   global inputport
+   main(sys.argv[1:])                                                         
 
