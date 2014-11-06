@@ -15,6 +15,13 @@ function killandclean {
 
 function stop {
     echo "Stopping the process list"
+    
+    if [ ! -f /tmp/alternativevoices.lock ]; then
+        echo "Nothing to stop, alternative voices not launched"
+        return
+    fi
+    
+    # Main
     killandclean /tmp/ttslauncher-fr.pid
     killandclean /tmp/ttslauncher-de.pid
     killandclean /tmp/ttslauncher-en.pid
@@ -23,11 +30,18 @@ function stop {
     # Rollback the voice configuration
     cp -f "${SCRIPTDIR}/conf/voice.conf.original" /usr/etc/conf/voice.conf
     
+    rm -f /tmp/alternativevoices.lock
+    
     echo "Done"
 }
 
 function start {
     echo "Starting the process"
+    
+    if [ -f /tmp/alternativevoices.lock ]; then
+        echo "Already started, nothing done"
+        return
+    fi
     
     # Override the voice configuration before launching
     if [ ! -f /usr/etc/conf/voice.conf ]; then
@@ -46,6 +60,8 @@ function start {
     echo $! > /tmp/ttslauncher-de.pid
     ${SCRIPTDIR}/es.sh &
     echo $! > /tmp/ttslauncher-es.pid
+    
+    touch /tmp/alternativevoices.lock
     
     echo "Done"
 }
