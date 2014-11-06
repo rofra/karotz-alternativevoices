@@ -110,6 +110,7 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
     """
 
     def handle(self):
+#        print "DEBUG: Connected"
         # self.request is the TCP socket connected to the client
         self.data = self.request.recv(1024).strip()
         self.parse_request(self.data)
@@ -121,7 +122,7 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
         chain = s.decode('utf-8', 'ignore').strip()
         parser.parsePostRequest(chain, self.request)
         self.request.close()
-        print "DEBUG: Disconnected"
+#        print "DEBUG: Disconnected"
 
     def parse_request(self, req):
         headers = {}
@@ -150,7 +151,7 @@ class KarotzPlayer:
        parameters = { 'engine': '0', 'text': text, 'voice': inputvoicelo, 'nocache' : '1', 'mute': '0' }
        parametersEncoded = urllib.urlencode(parameters)
        urlfull = 'http://127.0.0.1/cgi-bin/tts?%s' % parametersEncoded
-       print "DEBUG: PLAYING WITH KARTOZ WEB API: " + urlfull
+#       print "DEBUG: PLAYING WITH KARTOZ WEB API: " + urlfull
        f = urllib.urlopen(urlfull)
        
     def playWithAcapelaDirect(self, text, socketServerRequest):
@@ -159,7 +160,7 @@ class KarotzPlayer:
        
        libAcapela = AcapelaLibKarotz.AcapelaLibKarotz();
        response = libAcapela.getResponse(text, inputvoicelo)
-       print "DEBUG: PLAYING ACAPELA STREAMING"
+#       print "DEBUG: PLAYING ACAPELA STREAMING"
        socketServerRequest.sendall(response)
        
 def main(argv):

@@ -1,0 +1,11 @@
+[tts]
+fr=http://188.165.228.65/tts/Suzanne
+en=http://188.165.228.64/tts/Katherine
+de=http://188.165.228.64/tts/Alex
+es=http://188.165.228.65/tts/Sara
+
+[asr]
+nbserver=2
+server0=188.165.228.64
+server1=188.165.228.65
+port=443
