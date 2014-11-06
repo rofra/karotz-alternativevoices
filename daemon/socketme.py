@@ -1,4 +1,18 @@
 #!/usr/bin/env python
+#
+# Intermediate Sound Deamon emulating Official Karotz Servers. It allows using a custom TTS service from wherever we want
+# 
+# How to launch: 
+#   $ python socketme.py -p <porttobind> -g <acapelavoice>
+# Example
+#   $ python socketme.py -p 10001 -g antoine
+# 
+# What is does:
+# - Catch the request from Karotz voice daemon process
+# - Parse the content of the request (formatted as DOM)
+# - Manage Sound with the correct backend (for the moment KarotzAPI / Acapela)
+# - Return the Sound to the socket
+#
 # -*- coding: utf-8 -*-
 import SocketServer
 import pprint
@@ -9,8 +23,8 @@ import urllib
 import sys
 import re, getopt
 import codecs
+from lib import AcapelaLibKarotz
 
-#from urlparse import urlparse, parse_qs
 from BaseHTTPServer import BaseHTTPRequestHandler
 from StringIO import StringIO
 from xml.dom import minidom
@@ -18,31 +32,10 @@ from xml.dom.minidom import parse, parseString
 
 
 
-bashmodel = \
-'#!/bin/bash\n\
-source /www/cgi-bin/setup.inc\n\
-source /www/cgi-bin/url.inc\n\
-source /www/cgi-bin/utils.inc\n\
-source /www/cgi-bin/tts.inc\n\
-\n\
-KillProcess SOUNDS\n\
-\n\
-AcapelaTTS %s\n\
-'
 
-
-
-def rencodeur( txt ):
-    return txt
-    try:                                                               
-        txt = txt.decode('utf-8', 'ignore')
-        txt = txt.strip()
-    except UnicodeDecodeError:                                
-        pass  
-    return txt
-
+# Parser and Launcher
 class KarotzDomParser:
-    def parsePostRequest(self, text):
+    def parsePostRequest(self, text, socketServerRequest):
         try:
             text = text.decode('latin1')
         except UnicodeEncodeError:
@@ -73,18 +66,17 @@ class KarotzDomParser:
             current = root.firstChild
             
             while current:
-                #print current.nodeValue
-                self.parseDomElement(current)
+                self.parseAndLaunchAction(current, socketServerRequest)
                 current = current.nextSibling
             
-    def parseDomElement(self, t):
+    def parseAndLaunchAction(self, t, socketServerRequest):
         if (t.nodeType == t.TEXT_NODE):
             txtToRead = t.nodeValue
 
             txtToRead = txtToRead.encode("UTF-8", "replace")
             print "READ|" + txtToRead
             pl = KarotzPlayer()
-            pl.play(txtToRead)
+            pl.playWithAcapelaDirect(txtToRead, socketServerRequest)
         else: 
             tname = t.tagName
             if (tname == "break"): 
@@ -107,6 +99,7 @@ class KarotzDomParser:
                 print "UNKNOWN|" + tname
 
 
+# Socket Server
 class MyTCPHandler(SocketServer.BaseRequestHandler):
     """
     The RequestHandler class for our server.
@@ -119,29 +112,16 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
     def handle(self):
         # self.request is the TCP socket connected to the client
         self.data = self.request.recv(1024).strip()
-#        print "%s wrote:" % (self.client_address[0])
-#        print self.data
-
         self.parse_request(self.data)
-#        print self.body
         
         # Create the DOM Parser instance and launch the action
         parser = KarotzDomParser()
         s = self.body;
-        s = s.decode('utf-8', 'ignore')
-#        print s
-        chain = rencodeur(s.strip())
-
-        parser.parsePostRequest(chain)
-#        try:
-#            parser.parsePostRequest(chain)
-#        except UnicodeEncodeError:
-#            pass
-
-        # just send back the same data, but upper-cased
-#        self.request.sendall(self.data)
+        
+        chain = s.decode('utf-8', 'ignore').strip()
+        parser.parsePostRequest(chain, self.request)
         self.request.close()
-        print "Disconnected"
+        print "DEBUG: Disconnected"
 
     def parse_request(self, req):
         headers = {}
@@ -163,17 +143,25 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
         self.body = body
 
 class KarotzPlayer:
-    def play(self, text):
+    def playWithKarotzWebAPI(self, text, socketServerRequest):
        global inputvoice
-       #print "PLAY WITH " + inputvoice
-
-       parameters = { 'engine': '0', 'text': text, 'voice': inputvoice, 'nocache' : '1', 'mute': '0' }
+       inputvoicelo = inputvoice
+       
+       parameters = { 'engine': '0', 'text': text, 'voice': inputvoicelo, 'nocache' : '1', 'mute': '0' }
        parametersEncoded = urllib.urlencode(parameters)
-       urlfull = 'http://127.0.0.1/cgi-bin/tts?%s' % parametersEncoded
-       print "PLAYING " + urlfull
+       urlfull = 'http://192.168.0.5/cgi-bin/tts?%s' % parametersEncoded
+       print "DEBUG: PLAYING WITH KARTOZ WEB API: " + urlfull
        f = urllib.urlopen(urlfull)
-
-
+       
+    def playWithAcapelaDirect(self, text, socketServerRequest):
+       global inputvoice
+       inputvoicelo = inputvoice + '22k'
+       
+       libAcapela = AcapelaLibKarotz.AcapelaLibKarotz();
+       response = libAcapela.getResponse(text, inputvoicelo)
+       print "DEBUG: PLAYING ACAPELA STREAMING"
+       socketServerRequest.sendall(response)
+       
 def main(argv):
     global inputvoice
     inputport = ''
@@ -193,7 +181,6 @@ def main(argv):
            inputvoice = arg
 
     print "%s / %s" % (inputport, inputvoice)
-
 
     # Prepare the socket
     HOST, PORT = "",int(inputport)
