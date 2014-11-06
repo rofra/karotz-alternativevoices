@@ -149,7 +149,7 @@ class KarotzPlayer:
        
        parameters = { 'engine': '0', 'text': text, 'voice': inputvoicelo, 'nocache' : '1', 'mute': '0' }
        parametersEncoded = urllib.urlencode(parameters)
-       urlfull = 'http://192.168.0.5/cgi-bin/tts?%s' % parametersEncoded
+       urlfull = 'http://127.0.0.1/cgi-bin/tts?%s' % parametersEncoded
        print "DEBUG: PLAYING WITH KARTOZ WEB API: " + urlfull
        f = urllib.urlopen(urlfull)
        
