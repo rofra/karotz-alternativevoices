@@ -14,12 +14,7 @@ function killandclean {
 }
 
 function stop {
-    echo "Stopping the process list"
-    
-    if [ ! -f /tmp/alternativevoices.lock ]; then
-        echo "Nothing to stop, alternative voices not launched"
-        return
-    fi
+    echo "Stopping the process list (always)"
     
     # Main
     killandclean /tmp/ttslauncher-fr.pid
