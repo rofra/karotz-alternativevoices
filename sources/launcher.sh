@@ -4,12 +4,12 @@
 # @author Rodolphe Franceschi <rodolphe.franceschi@gmail.com>
 #
 FULLSCRIPTPATH="$(cd "${0%/*}" 2>/dev/null; echo "$PWD"/"${0##*/}")"
-SCRIPTDIR=$(dirname ${FULLSCRIPTPATH})
+SCRIPTDIR=$(dirname "${FULLSCRIPTPATH}")
 
 function killandclean {
-    if [ -f $1 ]; then
-        kill $(cat $1)
-        rm -f $1
+    if [ -f "$1" ]; then
+        kill $(cat "$1")
+        rm -f "$1"
     fi
 }
 
@@ -21,7 +21,7 @@ function stop {
     killandclean /tmp/ttslauncher-es.pid
     
     # Rollback the voice configuration
-    cp -f ${SCRIPTDIR}/conf/voice.conf.original /usr/etc/conf/voice.conf
+    cp -f "${SCRIPTDIR}/conf/voice.conf.original" /usr/etc/conf/voice.conf
     
     echo "Done"
 }
@@ -31,11 +31,11 @@ function start {
     
     # Override the voice configuration before launching
     if [ ! -f /usr/etc/conf/voice.conf ]; then
-        cp -f ${SCRIPTDIR}/conf/voice.conf.original /usr/etc/conf/voice.conf
+        cp -f "${SCRIPTDIR}/conf/voice.conf.original" /usr/etc/conf/voice.conf
     fi
-    cp -f ${SCRIPTDIR}/conf/voice.conf.alternative /usr/etc/conf/voice.conf
+    cp -f "${SCRIPTDIR}/conf/voice.conf.alternative" /usr/etc/conf/voice.conf
 
-    chmod a+x ${SCRIPTDIR}/fr.sh ${SCRIPTDIR}/en.sh ${SCRIPTDIR}/de.sh ${SCRIPTDIR}/es.sh
+    chmod a+x "${SCRIPTDIR}/fr.sh" "${SCRIPTDIR}/en.sh" "${SCRIPTDIR}/de.sh" "${SCRIPTDIR}/es.sh"
     
     # Launching immortal Dog :)
     ${SCRIPTDIR}/fr.sh &
