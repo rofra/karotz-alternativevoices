@@ -114,6 +114,17 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
         # self.request is the TCP socket connected to the client
         self.data = self.request.recv(1024).strip()
         self.parse_request(self.data)
+        #print self.data
+
+        # Extract the voice to use        
+        fline = self.data.splitlines()[0]
+        m = re.search('^POST /(\w+) HTTP/1.1$', fline)
+        extractedvoice = m.group(1) 
+        print "VOICE IS: %s" % extractedvoice
+
+        # Set the voice
+        global inputvoice                                              
+        inputvoice = extractedvoice
         
         # Create the DOM Parser instance and launch the action
         parser = KarotzDomParser()
@@ -156,7 +167,8 @@ class KarotzPlayer:
        
     def playWithAcapelaDirect(self, text, socketServerRequest):
        global inputvoice
-       inputvoicelo = inputvoice + '22k'
+       inputvoicelo = inputvoice
+       #inputvoicelo = inputvoice + '22k'
        
        libAcapela = AcapelaLibKarotz.AcapelaLibKarotz();
        response = libAcapela.getResponse(text, inputvoicelo)
@@ -168,20 +180,17 @@ def main(argv):
     inputport = ''
     inputvoice = ''
     try:
-        opts, args = getopt.getopt(argv,"hp:g:",["port=","voice="])
+        opts, args = getopt.getopt(argv,"hp:",["port="])
     except getopt.GetoptError:
-        print 'socketme.py -p <port> -g <voicename>'
+        print 'socketme.py -p <port>'
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-           print 'socketme.py -p <port> -g <voicename>'
+           print 'socketme.py -p <port>'
            sys.exit()
         elif opt in ("-p", "--port"):
            inputport = arg
-        elif opt in ("-g", "--voice"):
-           inputvoice = arg
 
-    print "%s / %s" % (inputport, inputvoice)
 
     # Prepare the socket
     HOST, PORT = "",int(inputport)
