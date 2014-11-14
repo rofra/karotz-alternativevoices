@@ -12,4 +12,5 @@ chmod a+x /usr/karotz/ttsemulator/*.sh
 
 # Write to the hook, do not start te emulator at boot time
 echo "/usr/karotz/ttsemulator/launcher.sh stop" >> /usr/karotz/hooks/karotz_init_start
+cat /usr/karotz/hooks/karotz_init_start|sort|uniq > /usr/karotz/hooks/karotz_init_start
 
