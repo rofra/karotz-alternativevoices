@@ -11,7 +11,7 @@ function stop {
     exit 0 
 }
 
-/usr/bin/python ${SCRIPTDIR}/daemon/socketme.py -p 10002 -g ryan 2>&1 > /dev/null &
+/usr/bin/python ${SCRIPTDIR}/daemon/socketme.py -p 10001 2>&1 > /dev/null &
 PROCESSPID=$(echo $!)
 
 trap stop SIGHUP SIGINT SIGTERM EXIT HUP TERM INT

@@ -1,8 +1,8 @@
 [tts]
-fr=http://127.0.0.1:10001
-en=http://127.0.0.1:10002
-de=http://127.0.0.1:10003
-es=http://127.0.0.1:10004
+fr=http://127.0.0.1:10001/antoine22k
+en=http://127.0.0.1:10001/ryan22k
+de=http://127.0.0.1:10001/andreas22k
+es=http://127.0.0.1:10001/antonio22k
 
 [asr]
 nbserver=2

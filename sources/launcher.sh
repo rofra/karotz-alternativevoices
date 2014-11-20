@@ -14,14 +14,15 @@ function killandclean {
 }
 
 function stop {
-    echo "Stopping the process list"
-    killandclean /tmp/ttslauncher-fr.pid
-    killandclean /tmp/ttslauncher-de.pid
-    killandclean /tmp/ttslauncher-en.pid
-    killandclean /tmp/ttslauncher-es.pid
+    echo "Stopping the process list (always)"
+    
+    # Main
+    killandclean /tmp/ttslauncher-multilang.pid
     
     # Rollback the voice configuration
     cp -f "${SCRIPTDIR}/conf/voice.conf.original" /usr/etc/conf/voice.conf
+    
+    rm -f /tmp/alternativevoices.lock
     
     echo "Done"
 }
@@ -29,23 +30,24 @@ function stop {
 function start {
     echo "Starting the process"
     
+    if [ -f /tmp/alternativevoices.lock ]; then
+        echo "Already started, nothing done"
+        return
+    fi
+    
     # Override the voice configuration before launching
     if [ ! -f /usr/etc/conf/voice.conf ]; then
         cp -f "${SCRIPTDIR}/conf/voice.conf.original" /usr/etc/conf/voice.conf
     fi
     cp -f "${SCRIPTDIR}/conf/voice.conf.alternative" /usr/etc/conf/voice.conf
 
-    chmod a+x "${SCRIPTDIR}/fr.sh" "${SCRIPTDIR}/en.sh" "${SCRIPTDIR}/de.sh" "${SCRIPTDIR}/es.sh"
+    chmod a+x "${SCRIPTDIR}/multilang.sh"
     
     # Launching immortal Dog :)
-    ${SCRIPTDIR}/fr.sh &
-    echo $! > /tmp/ttslauncher-fr.pid
-    ${SCRIPTDIR}/en.sh &
-    echo $! > /tmp/ttslauncher-en.pid
-    ${SCRIPTDIR}/de.sh &
-    echo $! > /tmp/ttslauncher-de.pid
-    ${SCRIPTDIR}/es.sh &
-    echo $! > /tmp/ttslauncher-es.pid
+    ${SCRIPTDIR}/multilang.sh &
+    echo $! > /tmp/ttslauncher-multilang.pid
+    
+    touch /tmp/alternativevoices.lock
     
     echo "Done"
 }
