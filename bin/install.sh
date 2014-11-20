@@ -7,6 +7,7 @@ FULLSCRIPTPATH="$(cd "${0%/*}" 2>/dev/null; echo "$PWD"/"${0##*/}")"
 SCRIPTDIR=$(dirname "${FULLSCRIPTPATH}")
 SRCDIR="${SCRIPTDIR}/../sources/"
 
+rm -fr /usr/karotz/ttsemulator/
 cp -fR ${SRCDIR} /usr/karotz/ttsemulator/
 chmod a+x /usr/karotz/ttsemulator/*.sh
 
